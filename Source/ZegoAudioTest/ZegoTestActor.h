@@ -29,6 +29,10 @@ class ZEGOAUDIOTEST_API AZegoTestActor : public AActor
 {
 	GENERATED_BODY()
 
+private:
+
+	FString currentStreamID;
+
 public:
 	// Sets default values for this actor's properties
 	AZegoTestActor();
@@ -47,10 +51,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "")
 		FString appSign = "3e6da86c4a2302165a3218c662a3c6a19c007464f82faf03531b5564d7321ab2";
 
+	TArray<FString> Users;
+
 	IZegoExpressEngine* engine;
 
 	std::shared_ptr<IMyEventHandler> eventHandler = nullptr;
-	//IMyEventHandler* myEventHandler = nullptr;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+		FString GetCurrentStreamID();
+
+	UFUNCTION(BlueprintCallable)
+		void SetCurrentStreamID(const FString& streamID);
 
 	//µÇÂ¼
 	UFUNCTION(BlueprintCallable)

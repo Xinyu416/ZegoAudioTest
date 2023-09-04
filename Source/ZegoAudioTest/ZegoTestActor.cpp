@@ -23,6 +23,16 @@ void AZegoTestActor::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+FString AZegoTestActor::GetCurrentStreamID()
+{
+	return this->currentStreamID;
+}
+
+void AZegoTestActor::SetCurrentStreamID(const FString& streamID)
+{
+	this->currentStreamID = *streamID;
+}
+
 /// <summary>
 /// 创建引擎实例
 /// </summary>
@@ -36,7 +46,7 @@ void AZegoTestActor::CreateEngine()
 
 	eventHandler = std::make_shared<IMyEventHandler>();
 	eventHandler->AZegoTestActorRef = this;
-	
+
 	// 创建实例
 	engine = ZegoExpressSDK::createEngine(profile, eventHandler);
 
@@ -103,6 +113,7 @@ void AZegoTestActor::DestroyEngine()
 
 	ZegoExpressSDK::destroyEngine(engine, nullptr);
 	GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Green, "DestroyEngine Sucess");
+	eventHandler->AZegoTestActorRef = nullptr;
 }
 
 /// <summary>
@@ -167,13 +178,26 @@ void AZegoTestActor::StopPlayStream(const FString& streamID)
 // 房间状态更新回调
 void IMyEventHandler::onRoomStateChanged(const std::string& roomID, ZegoRoomStateChangedReason reason, int errorCode, const std::string& extendedData) {
 
+	//只有当房间状态是登录成功或重连成功时，推流（startPublishingStream）、拉流（startPlayingStream）才能正常收发音视频
+	//将自己的音视频流推送到 ZEGO 音视频云
+
 	switch (reason)
 	{
 	case ZEGO::EXPRESS::ZEGO_ROOM_STATE_CHANGED_REASON_LOGINING:
 		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, "LOGINING");
 		break;
 	case ZEGO::EXPRESS::ZEGO_ROOM_STATE_CHANGED_REASON_LOGINED:
+		//登录成功
 		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, "LOGINED");
+		this->AZegoTestActorRef->StartPublishStream(this->AZegoTestActorRef->GetCurrentStreamID());
+		//推流
+		this->AZegoTestActorRef->StartPublishStream(this->AZegoTestActorRef->GetCurrentStreamID());
+		//拉流
+		for (size_t i = 0; i < this->AZegoTestActorRef->Users.Num(); ++i)
+		{
+			this->AZegoTestActorRef->StartPlayStream(this->AZegoTestActorRef->Users[i]);
+		}
+
 		break;
 	case ZEGO::EXPRESS::ZEGO_ROOM_STATE_CHANGED_REASON_LOGIN_FAILED:
 		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, "FAILED");
@@ -182,7 +206,16 @@ void IMyEventHandler::onRoomStateChanged(const std::string& roomID, ZegoRoomStat
 		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, "RECONNECTING");
 		break;
 	case ZEGO::EXPRESS::ZEGO_ROOM_STATE_CHANGED_REASON_RECONNECTED:
+		//重连成功
 		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, "RECONNECTED");
+		//推流
+		this->AZegoTestActorRef->StartPublishStream(this->AZegoTestActorRef->GetCurrentStreamID());
+		//拉流
+		for (size_t i = 0; i < this->AZegoTestActorRef->Users.Num(); ++i)
+		{
+			this->AZegoTestActorRef->StartPlayStream(this->AZegoTestActorRef->Users[i]);
+		}
+
 		break;
 	case ZEGO::EXPRESS::ZEGO_ROOM_STATE_CHANGED_REASON_RECONNECT_FAILED:
 		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, "RECONNECT_FAILED");
@@ -213,16 +246,25 @@ void IMyEventHandler::onRoomUserUpdate(const std::string& roomID, ZegoUpdateType
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Green, *FString((userList[i].userID).c_str()));
 			this->AZegoTestActorRef->StartPlayStream(*FString((userList[i].userID).c_str()));
+
+			//保存用户ID信息
+			this->AZegoTestActorRef->Users.Add(*FString((userList[i].userID).c_str()));
 		}
 		break;
+		//用户减少 停止拉流
 	case ZEGO::EXPRESS::ZEGO_UPDATE_TYPE_DELETE:
 		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Green, "User_DELETE");
+
 		for (size_t i = 0; i < userList.size(); i++)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, *FString((userList[i].userID).c_str()));
 			this->AZegoTestActorRef->StopPlayStream(*FString((userList[i].userID).c_str()));
+
+			//删除用户ID信息
+			this->AZegoTestActorRef->Users.Remove(*FString((userList[i].userID).c_str()));
 		}
 		break;
+
 	default:
 		break;
 	}
@@ -242,6 +284,7 @@ void IMyEventHandler::onRoomStreamUpdate(const std::string& roomID, ZegoUpdateTy
 			this->AZegoTestActorRef->StartPlayStream(*FString((streamList[i].streamID).c_str()));
 		}
 		break;
+
 	case ZEGO::EXPRESS::ZEGO_UPDATE_TYPE_DELETE:
 		for (size_t i = 0; i < streamList.size(); i++)
 		{
@@ -249,6 +292,7 @@ void IMyEventHandler::onRoomStreamUpdate(const std::string& roomID, ZegoUpdateTy
 			this->AZegoTestActorRef->StopPlayStream(*FString((streamList[i].streamID).c_str()));
 		}
 		break;
+
 	default:
 		break;
 	}
