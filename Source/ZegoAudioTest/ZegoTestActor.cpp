@@ -8,7 +8,6 @@ AZegoTestActor::AZegoTestActor()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
 // Called when the game starts or when spawned
@@ -23,11 +22,13 @@ void AZegoTestActor::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+//获取当前StreamID
 FString AZegoTestActor::GetCurrentStreamID()
 {
 	return this->currentStreamID;
 }
 
+//设置当前StreamID
 void AZegoTestActor::SetCurrentStreamID(const FString& streamID)
 {
 	this->currentStreamID = *streamID;
@@ -131,6 +132,7 @@ void AZegoTestActor::StartPublishStream(const FString& streamID)
 	GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Green, "StartPublishStream");
 }
 
+
 /// <summary>
 /// 停止推流
 /// </summary>
@@ -144,6 +146,7 @@ void AZegoTestActor::StopPublishStream()
 	engine->stopPublishingStream();
 	GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Green, "StopPublishStream");
 }
+
 
 /// <summary>
 /// 开始拉流
@@ -175,7 +178,22 @@ void AZegoTestActor::StopPlayStream(const FString& streamID)
 	GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Green, "StopPlayStream");
 }
 
-// 房间状态更新回调
+
+bool AZegoTestActor::SDTwoParamsCallback(const FString& str, FDelegateWithTwoParam SDTwoParam)
+{
+	SDTwoParam.ExecuteIfBound(true,"Test SDOneParamCallback");
+	GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Green, *FString(str));
+	return true;
+}
+
+
+/// <summary>
+/// 房间状态更新回调
+/// </summary>
+/// <param name="roomID"></param>
+/// <param name="reason"></param>
+/// <param name="errorCode"></param>
+/// <param name="extendedData"></param>
 void IMyEventHandler::onRoomStateChanged(const std::string& roomID, ZegoRoomStateChangedReason reason, int errorCode, const std::string& extendedData) {
 
 	//只有当房间状态是登录成功或重连成功时，推流（startPublishingStream）、拉流（startPlayingStream）才能正常收发音视频
@@ -197,6 +215,8 @@ void IMyEventHandler::onRoomStateChanged(const std::string& roomID, ZegoRoomStat
 		{
 			this->AZegoTestActorRef->StartPlayStream(this->AZegoTestActorRef->Users[i]);
 		}
+		//广播
+		this->AZegoTestActorRef->NotifyLogined.Broadcast(this->AZegoTestActorRef->Users);
 
 		break;
 	case ZEGO::EXPRESS::ZEGO_ROOM_STATE_CHANGED_REASON_LOGIN_FAILED:
@@ -215,6 +235,8 @@ void IMyEventHandler::onRoomStateChanged(const std::string& roomID, ZegoRoomStat
 		{
 			this->AZegoTestActorRef->StartPlayStream(this->AZegoTestActorRef->Users[i]);
 		}
+		//广播
+		this->AZegoTestActorRef->NotifyLogined.Broadcast(this->AZegoTestActorRef->Users);
 
 		break;
 	case ZEGO::EXPRESS::ZEGO_ROOM_STATE_CHANGED_REASON_RECONNECT_FAILED:
@@ -234,7 +256,12 @@ void IMyEventHandler::onRoomStateChanged(const std::string& roomID, ZegoRoomStat
 	}
 }
 
-// 用户状态更新回调
+/// <summary>
+/// 用户状态更新回调
+/// </summary>
+/// <param name="roomID"></param>
+/// <param name="updateType"></param>
+/// <param name="userList"></param>
 void IMyEventHandler::onRoomUserUpdate(const std::string& roomID, ZegoUpdateType updateType, const std::vector<ZegoUser>& userList)
 {
 	switch (updateType)
@@ -250,6 +277,7 @@ void IMyEventHandler::onRoomUserUpdate(const std::string& roomID, ZegoUpdateType
 			//保存用户ID信息
 			this->AZegoTestActorRef->Users.Add(*FString((userList[i].userID).c_str()));
 		}
+
 		break;
 		//用户减少 停止拉流
 	case ZEGO::EXPRESS::ZEGO_UPDATE_TYPE_DELETE:

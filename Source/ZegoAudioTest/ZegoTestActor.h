@@ -8,6 +8,9 @@
 #include "ZegoTestActor.generated.h"
 using namespace ZEGO::EXPRESS;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FLoginSucess, const TArray<FString>&, OtherUsers);
+
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FDelegateWithTwoParam, bool, bResult, FString, str);
 
 class IMyEventHandler :public IZegoEventHandler
 {
@@ -23,6 +26,8 @@ public:
 
 	AZegoTestActor* AZegoTestActorRef;
 };
+
+
 
 UCLASS()
 class ZEGOAUDIOTEST_API AZegoTestActor : public AActor
@@ -51,15 +56,23 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "")
 		FString appSign = "3e6da86c4a2302165a3218c662a3c6a19c007464f82faf03531b5564d7321ab2";
 
+
+	UPROPERTY(BlueprintAssignable, BlueprintReadWrite)
+		FLoginSucess NotifyLogined;
+
+	UFUNCTION(BlueprintCallable)
+		bool SDTwoParamsCallback(const FString& str, FDelegateWithTwoParam SDTwoParam);
+	
+
 	TArray<FString> Users;
-
 	IZegoExpressEngine* engine;
-
 	std::shared_ptr<IMyEventHandler> eventHandler = nullptr;
 
+	//获取当前StreamID
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 		FString GetCurrentStreamID();
 
+	//设置当前StreamID
 	UFUNCTION(BlueprintCallable)
 		void SetCurrentStreamID(const FString& streamID);
 
