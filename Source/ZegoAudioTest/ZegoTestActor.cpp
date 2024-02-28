@@ -160,7 +160,7 @@ void AZegoTestActor::StartPlayStream(const FString& streamID)
 		return;
 	}
 	engine->startPlayingStream(TCHAR_TO_UTF8(*streamID));
-	GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Green, "StartPlayStream");
+	GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Yellow, "StartPlayStream");
 }
 
 /// <summary>
@@ -179,9 +179,20 @@ void AZegoTestActor::StopPlayStream(const FString& streamID)
 }
 
 
+void AZegoTestActor::SwitchRoom(const FString& fromRoomID, const FString& toRoomID)
+{
+	if (engine == nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, "please create engine first");
+		return;
+	}
+	engine->switchRoom(TCHAR_TO_UTF8(*fromRoomID), TCHAR_TO_UTF8(*toRoomID), nullptr);
+	GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Green, "SwitchRoom");
+}
+
 bool AZegoTestActor::SDTwoParamsCallback(const FString& str, FDelegateWithTwoParam SDTwoParam)
 {
-	SDTwoParam.ExecuteIfBound(true,"Test SDOneParamCallback");
+	SDTwoParam.ExecuteIfBound(true, "Test SDOneParamCallback");
 	GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Green, *FString(str));
 	return true;
 }
@@ -207,6 +218,10 @@ void IMyEventHandler::onRoomStateChanged(const std::string& roomID, ZegoRoomStat
 	case ZEGO::EXPRESS::ZEGO_ROOM_STATE_CHANGED_REASON_LOGINED:
 		//登录成功
 		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, "LOGINED");
+
+		//切换房间的事件广播
+		this->AZegoTestActorRef->NotifySwitchRoom.Broadcast(*FString(roomID.c_str()));
+
 		this->AZegoTestActorRef->StartPublishStream(this->AZegoTestActorRef->GetCurrentStreamID());
 		//推流
 		this->AZegoTestActorRef->StartPublishStream(this->AZegoTestActorRef->GetCurrentStreamID());
@@ -215,12 +230,13 @@ void IMyEventHandler::onRoomStateChanged(const std::string& roomID, ZegoRoomStat
 		{
 			this->AZegoTestActorRef->StartPlayStream(this->AZegoTestActorRef->Users[i]);
 		}
-		//广播
+		//登录成功的事件广播
 		this->AZegoTestActorRef->NotifyLogined.Broadcast(this->AZegoTestActorRef->Users);
 
 		break;
 	case ZEGO::EXPRESS::ZEGO_ROOM_STATE_CHANGED_REASON_LOGIN_FAILED:
 		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, "FAILED");
+		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, FString::Printf(TEXT("LOGIN_FAILED : %d"), errorCode));
 		break;
 	case ZEGO::EXPRESS::ZEGO_ROOM_STATE_CHANGED_REASON_RECONNECTING:
 		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, "RECONNECTING");
@@ -241,6 +257,7 @@ void IMyEventHandler::onRoomStateChanged(const std::string& roomID, ZegoRoomStat
 		break;
 	case ZEGO::EXPRESS::ZEGO_ROOM_STATE_CHANGED_REASON_RECONNECT_FAILED:
 		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, "RECONNECT_FAILED");
+		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, FString::Printf(TEXT("RECONNECT_FAILED : %d"), errorCode));
 		break;
 	case ZEGO::EXPRESS::ZEGO_ROOM_STATE_CHANGED_REASON_KICK_OUT:
 		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, "KICK_OUT");
@@ -250,6 +267,8 @@ void IMyEventHandler::onRoomStateChanged(const std::string& roomID, ZegoRoomStat
 		break;
 	case ZEGO::EXPRESS::ZEGO_ROOM_STATE_CHANGED_REASON_LOGOUT_FAILED:
 		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, "LOGOUT_FAILED");
+		GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Red, FString::Printf(TEXT("LOGOUT_FAILED : %d"), errorCode));
+	
 		break;
 	default:
 		break;

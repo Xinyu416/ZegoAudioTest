@@ -10,6 +10,8 @@ using namespace ZEGO::EXPRESS;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FLoginSucess, const TArray<FString>&, OtherUsers);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSwitchRoomEvent, const FString&, ToRoomID);
+
 DECLARE_DYNAMIC_DELEGATE_TwoParams(FDelegateWithTwoParam, bool, bResult, FString, str);
 
 class IMyEventHandler :public IZegoEventHandler
@@ -60,9 +62,12 @@ public:
 	UPROPERTY(BlueprintAssignable, BlueprintReadWrite)
 		FLoginSucess NotifyLogined;
 
+	UPROPERTY(BlueprintAssignable, BlueprintReadWrite)
+		FSwitchRoomEvent NotifySwitchRoom;
+
 	UFUNCTION(BlueprintCallable)
 		bool SDTwoParamsCallback(const FString& str, FDelegateWithTwoParam SDTwoParam);
-	
+
 
 	TArray<FString> Users;
 	IZegoExpressEngine* engine;
@@ -107,4 +112,8 @@ public:
 	//停止拉流
 	UFUNCTION(BlueprintCallable)
 		void StopPlayStream(const FString& streamID);
+
+	//切换房间
+	UFUNCTION(BlueprintCallable)
+		void SwitchRoom(const FString& fromRoomID, const FString& toRoomID);
 };
