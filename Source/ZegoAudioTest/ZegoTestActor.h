@@ -54,9 +54,9 @@ public:
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "")
-		int32 appID = 383550049;
+		int32 appID = 2029645280;//383550049
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "")
-		FString appSign = "3e6da86c4a2302165a3218c662a3c6a19c007464f82faf03531b5564d7321ab2";
+		FString appSign = "0d6be013972c4549d027b59ca4935e5f809f023ccd5947438c5ef471c90d44a6";//3e6da86c4a2302165a3218c662a3c6a19c007464f82faf03531b5564d7321ab2
 
 
 	UPROPERTY(BlueprintAssignable, BlueprintReadWrite)
