@@ -82,7 +82,7 @@ void AZegoTestActor::LoginRoom(const FString& roomID, const FString& userID)
 				UE_LOG(LogTemp, Warning, TEXT("loginRoom result, errorCode:%d,extendedData:%s"), errorCode, *FString(extendedData.c_str()))
 				});
 		});
-
+	
 	GEngine->AddOnScreenDebugMessage(-1, 200.f, FColor::Green, "loginRoom End");
 }
 
